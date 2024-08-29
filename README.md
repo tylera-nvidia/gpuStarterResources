@@ -41,36 +41,47 @@ An Architecture white paper is released with every new GPU architecture, and is 
 ## Types of HW 
 comparison of HW diagrams from whitepapers
 ### Compute HW Resources
-- CUDA cores 
-- Tensor cores
-- RT Cores
+| GA100                                |                                 GA102   |
+| --------                             |                                 ------- |
+| ![image](images/GA100_SM_BLOCK.png)  |  ![image](images/GA102_SM_BLOCK.png)    |
+
+[Ampere Compute Capability Core Description](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capability-8-x)
+- CUDA Cores 
+- Tensor Cores
+- Raytracing Cores
 - Special Function Unit
 ### Memory HW Resources
-- Global(Device) Memory
-- L1/L2 Cache
-- Shared Memory
-- Constant Memory
-- Registers
-- Textures
+
+- HW Memory Types and Hierarchy
+  
+  [Technical Blog on Memory](https://developer.nvidia.com/blog/cuda-refresher-cuda-programming-model/)
+  - Global(Device) Memory
+  - L1/L2 Cache
+  - Shared Memory
+  - Registers
+    
+- Specialty Memory Types
+  
+  [CUDA Documentation on Memory Accesses](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#device-memory-accesses)
+  - Constant Memory
+  - Textures
+  - Local Memory
+
+- Memory Alignment and Optimization
+
+  [CUDA Documentation on Memory Alignment](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#device-memory-accesses)
+
+
 ### Operation Specific Dedicated HW
 - Copy Engines
 - Codecs
+
 ## CUDA work breakdown to HW
-HOW GPU COMPUTING WORKS Stephen Jones, GTC 2021: 64-66
+[HOW GPU COMPUTING WORKS Stephen Jones, GTC 2021: 64-66](https://www.nvidia.com/en-us/on-demand/session/gtcspring21-s31151/)
 ## Balancing HW to Maximize Performance
-HOW CUDA PROGRAMMING WORKS Stephen Jones, GTC 2022: 49-84
+[HOW CUDA PROGRAMMING WORKS Stephen Jones, GTC 2022: 49-84](https://www.nvidia.com/en-us/on-demand/session/gtcfall22-a41101/)
 ## Generational Changes in GPU HW
 Compute Capabilites Doc: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
-
-# CUDA Programming Overview
-## The CUDA Programming Guide
-## Host Vs Device Programming
-### CUDA Host API
-### CUDA Device API
-### CUDA Math Libraries 
-## Writing Software to Maximize HW
-### GPU Resource Management
-### Concurrency  
 
 
 # Key Performance Drivers and Bottlenecks
@@ -148,11 +159,10 @@ Bandwidth Limited!
 This example is very "macroscopic" and real-world performance is further limited by global memory latencies, efficiency of workbreakdown, or other factors of the GPU execution. This is still a useful baseline for understanding the performance limiters we can expect in the real kernel, as we will see scaled down versions of these bottlenecks in practice. 
 
 ## Latency vs Throughput
-HOW GPU COMPUTING WORKS Stephen Jones, GTC 2021: 41-55
+[HOW GPU COMPUTING WORKS Stephen Jones, GTC 2021: 41-55](https://www.nvidia.com/en-us/on-demand/session/gtcspring21-s31151/)
 
 ## GPU Occupancy
-How To Write A CUDA Program:THE NINJA EDITION Stephen Jones, NVIDIA | GTC 2024 : 12-28
-
+[How To Write A CUDA Program:THE NINJA EDITION Stephen Jones, NVIDIA | GTC 2024 : 12-28](https://www.nvidia.com/en-us/on-demand/session/gtc24-s62401/)
 
 
 # Techniques for Accelerating Code
@@ -174,11 +184,11 @@ How To Write A CUDA Program:THE NINJA EDITION Stephen Jones, NVIDIA | GTC 2024 :
 Kernel stalls are the distinct, instruction-level impact of memory, compute, or other resource contention that slows down a kernel. By evaluating (and eliminating) kernel stalls, we can further accelerlate a well-designed kernel.
 
 
-  **disclaimer: This level of analysisi should only be conducted once you have refined a good kernel-level solution. If you have poorly thought-out or optimized data accesss or algorithmic patterns, optimizing at the instruction level will result in mediocre speedups on a poor design. This level of optimization cannot fundimentally correct those higher level issues.**
+  **disclaimer: This level of analysis should only be conducted once you have refined a good kernel-level solution. If you have poorly thought-out or optimized data accesss or algorithmic patterns, optimizing at the instruction level will result in mediocre speedups on a poor design. This level of optimization cannot fundimentally correct those higher level issues.**
   
   
 ### types of stalls
-  https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html#metrics-reference
+  [Table of Stalls from NCU Documentation](https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html#id31)
 ### Most common stalls
 - Short/Long Scoreboard Stall
 - Stall MIO  Throttle
@@ -197,7 +207,9 @@ Kernel stalls are the distinct, instruction-level impact of memory, compute, or 
 ### Interpretation Guidance
 ## Nsight Compute 
 ### Interpretation Guidance
-## Nsight Graphics
-### Interpretation Guidance
+## ~~Nsight Graphics~~
+### ~~Interpretation Guidance~~
+## Profiling & Optimizing CUDA Math Libraries
+## CUTLASS
 ## Suggested use patterns and scripting
 
