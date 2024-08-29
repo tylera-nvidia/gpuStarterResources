@@ -48,8 +48,9 @@ comparison of HW diagrams from whitepapers
 [Ampere Compute Capability Core Description](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capability-8-x)
 - CUDA Cores 
 - Tensor Cores
-- Raytracing Cores
 - Special Function Unit
+- Raytracing Cores
+   - [Optix Documentation](https://raytracing-docs.nvidia.com/optix8/index.html)
 ### Memory HW Resources
 
 - HW Memory Types and Hierarchy
@@ -167,9 +168,11 @@ This example is very "macroscopic" and real-world performance is further limited
 
 # Techniques for Accelerating Code
 ## Optimizing Data Allocations 
+- Using the correct type of memory
 - Creating Plans and Data allocations ahead of time
 ## Optimizing Data Movement
-- Pinned vs UnPinned copies
+- Conscientious Copies 
+- Pinned vs un-Pinned copies
 - Impact of Types of CUDA Memory
 
 ## CUDA Streams 
@@ -204,12 +207,36 @@ Kernel stalls are the distinct, instruction-level impact of memory, compute, or 
 
 # CUDA Profiling Tools Overview
 ## Nsight Systems
+[Nsight Systems Landing Page](https://developer.nvidia.com/nsight-systems)
+
+[Nsight Systems Documentation](https://docs.nvidia.com/nsight-systems/index.html)
+
+Two Functionality to be familiar with:
+1. Command Line collection (nsys)
+2. In-App Review (Full Windows App)
+
 ### Interpretation Guidance
+(In Person Demonstration)
 ## Nsight Compute 
+[Nsight Compute Landing Page](https://developer.nvidia.com/nsight-compute)
+
+[Nsight Compute Documentation](https://docs.nvidia.com/nsight-compute/)
+
+Two Functionality to be familiar with:
+1. Command Line collection (ncu)
+2. In-App Review (Full Windows App)
 ### Interpretation Guidance
+(In Person Demonstration)
 ## ~~Nsight Graphics~~
 ### ~~Interpretation Guidance~~
 ## Profiling & Optimizing CUDA Math Libraries
 ## CUTLASS
 ## Suggested use patterns and scripting
+### nsys/Nsight Systems Examples
+### ncu/Nsight Compute Examples
+
+# Optimization Examples
+## Example 1: Low Occupancy and Increasing Parallelism
+## Example 2: Reducing Shared Memory Pressure
+## Example 3: Register Bound Optimizations
 
