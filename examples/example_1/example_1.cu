@@ -35,6 +35,12 @@ template< typename T >
 void manual_cuda( int numSamples = 25)
 {
   nvtxRangePushA("Manual CUDA Version");
+
+  // initialize timing variables
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  int warmupOffset = 5; //run a few times to warm up kernels  
   
   uint32_t matSizeX = 4096;
   uint32_t matSizeY = 4096;
@@ -52,24 +58,42 @@ void manual_cuda( int numSamples = 25)
   int blockSize =  1024; //hardcoded as largest block size
   
   // int numBlocks = IDIVUP(matSizeX, blockSize);
+  
   // simple scale out
   // int numBlocks = IDIVUP(matSizeX, blockSize) * matSizeY;
   // scale out but not as much
   // int numBlocks = IDIVUP(matSizeX, blockSize) * matSizeY/100;
   
-  // //programatic
-  // cudaDeviceProp deviceProp;
-  // cudaGetDeviceProperties(&deviceProp, 0);
-  // int numBlocks = deviceProp.multiProcessorCount; 
+  //programatic
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, 0);
+  int numBlocks = deviceProp.multiProcessorCount * 2; 
+  
   
   #pragma unroll
   for( int curSample = 0; curSample < numSamples; curSample++)
   {
+    nvtxRangePushA("Iteration");
+    if(curSample == warmupOffset )
+    {
+      //start of timing
+      cudaEventRecord(start, 0);      
+    }    
+    
     customElementMultiple<T><<<numBlocks,blockSize>>>(pMatA, pMatB, pMatC, matSizeX, matSizeY);
+    
+    nvtxRangePop();
   }
   
+  //end of timing
+  cudaEventRecord(stop, 0);
   cudaDeviceSynchronize();
   
+   //report average time
+  float time_ms;
+  cudaEventElapsedTime(&time_ms, start, stop);
+  std::cout << "Average elapsed time per iteration is: " << time_ms * 1.0e3 / static_cast<double>(numSamples - warmupOffset)  << "us" << std::endl;
+ 
   nvtxRangePop();
 }
 
