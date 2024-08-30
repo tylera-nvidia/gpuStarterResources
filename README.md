@@ -237,6 +237,6 @@ Two Functionality to be familiar with:
 
 # Optimization Examples
 ## Example 1: Low Occupancy and Increasing Parallelism
-## Example 2: Reducing Shared Memory Pressure
+## Example 2: Reducing Register Pressure with Shared Memory 
 ## Example 3: Register Bound Optimizations
 
