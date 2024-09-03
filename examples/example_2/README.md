@@ -36,7 +36,7 @@ Average elapsed time per iteration is: 3372.13us
 # Profiling Commands
 
 to profile with nsys, try the following:
-`nsys profile -o example_1 ./example_1`
+`nsys profile -o example_2 ./example_2`
 
 to profile with ncu, try the following:
-`ncu --set=full --import-source=true -c 2 -f -o example_1 ./example_1`
+`ncu --set=full --import-source=true -c 2 -f -o example_2 ./example_2`

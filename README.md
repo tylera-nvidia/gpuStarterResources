@@ -1,5 +1,7 @@
 # Introduction
 
+
+<!----------------------------  Resources Section  ---------------------------->
 # Educational Resources
 ## CUDA Programming Guide
 The CUDA Documentation contains best practices and a programming guide that establishs many of the patterns that result in optimal CUDA performance. This is a critical reference and daily resource for any level of developer.
@@ -24,6 +26,7 @@ NVIDIA Blogs is the written format equivilant of our GTC talks. most blogs focus
 
 ### Suggested Blogs
 - [Asychronous CUDA Memory](https://developer.nvidia.com/blog/using-cuda-stream-ordered-memory-allocator-part-1/)
+- [cuBLASLt Optimization](https://developer.nvidia.com/blog/introducing-grouped-gemm-apis-in-cublas-and-more-performance-updates/)
 
 ## Architecture White Papers
 An Architecture white paper is released with every new GPU architecture, and is the "ground truth" for HW changes and it's associated capability changes. 
@@ -37,6 +40,7 @@ An Architecture white paper is released with every new GPU architecture, and is 
 ## What is Accelerated Computing
 ## When is my program a candidate for acceleration
 
+<!----------------------------  HW Section  ----------------------------------->
 # GPU HW Overview
 ## Types of HW 
 comparison of HW diagrams from whitepapers
@@ -84,7 +88,7 @@ comparison of HW diagrams from whitepapers
 ## Generational Changes in GPU HW
 Compute Capabilites Doc: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
 
-
+<!----------------------------  SoL Section  ---------------------------------->
 # Key Performance Drivers and Bottlenecks
 ## Speed of Light
 NVIDIA Concept of "How fast can something possibly be done". Said another way, "what is the absolute limit of performance for a given problem on a given device".
@@ -165,7 +169,7 @@ This example is very "macroscopic" and real-world performance is further limited
 ## GPU Occupancy
 [How To Write A CUDA Program:THE NINJA EDITION Stephen Jones, NVIDIA | GTC 2024 : 12-28](https://www.nvidia.com/en-us/on-demand/session/gtc24-s62401/)
 
-
+<!---------------------------  Acceleration Section  -------------------------->
 # Techniques for Accelerating Code
 ## Optimizing Data Allocations 
 - Using the correct type of memory
@@ -174,6 +178,13 @@ This example is very "macroscopic" and real-world performance is further limited
 - Conscientious Copies 
 - Pinned vs un-Pinned copies
 - Impact of Types of CUDA Memory
+
+## Host APIs vs Device APIs
+most CUDA libraries have versions that you can call directly from the host ([cuFFT](https://docs.nvidia.com/cuda/cufft/index.html)), and a version you can call while on the device ([cufftDx](https://docs.nvidia.com/cuda/cufftdx/index.html))
+
+In General, the Host API is intended as the easier to use, Good-to-SoL performance entrypoint for a developer. for "good" sizes and sufficiently large work, the host API can provide the best performance. 
+
+In many scenarios however, you may have problem sizes that are too small to saturate a GPU, have awkward and non-performant sizes, or simply be a non-optimized corner case for the host API. In these situations, the device API enables developers to create a more precise launch configuration that appropriately matches the problem. This also allows developers to fuse other operations with the core mathmatical operation, providing additional speed up. 
 
 ## CUDA Streams 
   - [Streams Blog](https://developer.nvidia.com/blog/gpu-pro-tip-cuda-7-streams-simplify-concurrency/)
@@ -204,8 +215,9 @@ Kernel stalls are the distinct, instruction-level impact of memory, compute, or 
 - Syncrhonization 
 
 
-
+<!----------------------------  Profiling Section  ---------------------------->
 # CUDA Profiling Tools Overview
+
 ## Nsight Systems
 [Nsight Systems Landing Page](https://developer.nvidia.com/nsight-systems)
 
@@ -217,6 +229,7 @@ Two Functionality to be familiar with:
 
 ### Interpretation Guidance
 (In Person Demonstration)
+
 ## Nsight Compute 
 [Nsight Compute Landing Page](https://developer.nvidia.com/nsight-compute)
 
@@ -225,18 +238,63 @@ Two Functionality to be familiar with:
 Two Functionality to be familiar with:
 1. Command Line collection (ncu)
 2. In-App Review (Full Windows App)
+
 ### Interpretation Guidance
 (In Person Demonstration)
 ## ~~Nsight Graphics~~
 ### ~~Interpretation Guidance~~
-## Profiling & Optimizing CUDA Math Libraries
-## CUTLASS
-## Suggested use patterns and scripting
-### nsys/Nsight Systems Examples
-### ncu/Nsight Compute Examples
 
+## Profiling & Optimizing CUDA Math Libraries
+
+### CUTLASS Profiler
+- [Documentation on Profiling CUTLASS](https://github.com/NVIDIA/cutlass/wiki/Performance-Profiling)
+### Suggested use patterns and scripting
+<!--- Make a Flow Diagram later-->
+- Start with Host API
+- move plan and setup code out of critical loop as much as possible
+- Evaluate performance relative to Speed of Light
+- determine if 
+
+## nsys/Nsight Systems Examples
+Below are a set of common, useful command options. They can be combined and enabled all in a single report.
+
+| Command                                         | Notes                                                                     |
+| ------------------------------------------------| --------------------------------------------------------------------------|
+| `nsys profile -o outputName ./myExec`           | basic command. will not automaticall overwrite, requires `-f` flag        |
+| `nsys profile --gpu-metrics-device=0 ./myExec`  | Adds the GPU Metrics section to the report. requires Elevated Permissions |
+| `nsys profile --cuda-graph-trace=node ./myExec` | Shows Kernel information internal to CUDA Graph Node                      |
+| `nsys profile --cuda-memory-usage=true ./myExec`| Adds GPU memory usage section to report                                   |
+
+## ncu/Nsight Compute Examples
+Below are a set of common, useful command options. They can be combined and enabled all in a single report. I suggest collecting the "full" set, unless you know you want a specific subset of the report.
+
+| Command                                         | Notes                                                                                  |
+| ------------------------------------------------| ---------------------------------------------------------------------------------------|
+| `ncu --set=full  -o outputName ./myExec`                     | basic command. will not automaticall overwrite, requires `-f` flag        |
+| `ncu --set=full --import-source=true -o outputName ./myExec` | adds source collection. requires `-lineinfo` in compilation               |
+| `ncu --set=full -k kernelName -o outputName ./myExec`        | Only collects profile for a specific kernel in the exection               |
+
+
+<!----------
+### System Configuration for full profiling
+`Notes on System setup`
+----------->
+
+<!----------------------------  Profiling Section  ---------------------------->
 # Optimization Examples
 ## Example 1: Low Occupancy and Increasing Parallelism
-## Example 2: Reducing Register Pressure with Shared Memory 
-## Example 3: Register Bound Optimizations
+- [Example 1](examples/example_1/README.md)
 
+## Example 2: Reducing Register Pressure with Shared Memory 
+- [Example 2](examples/example_2/README.md)
+
+## Example 3: Optimizing Plan Creation for cuFFT
+- [FFT Sizing Benchmark](https://github.com/tylera-nvidia/fftSizing)
+
+## Example 4: using cuBlasLT Auto Tuning
+- [cuBLASLt Optimization](https://developer.nvidia.com/blog/introducing-grouped-gemm-apis-in-cublas-and-more-performance-updates/)
+- [CUDA Library Samples](https://github.com/tylera-nvidia/CUDALibrarySamples/tree/master/cuBLASLt/LtSgemmSimpleAutoTuning)
+
+<!---
+## Example 5: Memory Transfer Optimizations
+-->
