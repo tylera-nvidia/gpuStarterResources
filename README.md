@@ -1,5 +1,13 @@
 # Introduction
 
+## Table of Contents:
+- [Educational Resources](#educational-resources)
+- [GPU HW Overview](#gpu-hw-overview)
+- [Key Performance Drivers and Bottlenecks](#key-performance-drivers-and-bottlenecks)
+- [Techniques for Accelerating Code](#techniques-for-accelerating-code)
+- [CUDA Profiling Tools Overview](#cuda-profiling-tools-overview)
+- [Optimization Examples](#optimization-examples)
+
 
 <!----------------------------  Resources Section  ---------------------------->
 # Educational Resources
@@ -35,10 +43,12 @@ An Architecture white paper is released with every new GPU architecture, and is 
 - [Hopper White Paper](https://resources.nvidia.com/en-us-tensor-core/gtc22-whitepaper-hopper)
 - [Ampere 102 White Paper](https://www.nvidia.com/content/PDF/nvidia-ampere-ga-102-gpu-architecture-whitepaper-v2.pdf)
 - [Ampere 100 White Paper](https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf)
-# Accelerate Computing Basics & Goals
 
+<!----------
+# Accelerate Computing Basics & Goals
 ## What is Accelerated Computing
 ## When is my program a candidate for acceleration
+----------->
 
 <!----------------------------  HW Section  ----------------------------------->
 # GPU HW Overview
