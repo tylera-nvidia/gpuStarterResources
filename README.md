@@ -263,7 +263,7 @@ Two Functionality to be familiar with:
 - Start with Host API
 - move plan and setup code out of critical loop as much as possible
 - Evaluate performance relative to Speed of Light
-- determine if 
+- determine if additional operations can be fused
 
 ## nsys/Nsight Systems Examples
 Below are a set of common, useful command options. They can be combined and enabled all in a single report.
