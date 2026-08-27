@@ -2,7 +2,27 @@
 
 A compact index for engineers building, profiling, and optimizing CUDA software. This repository links to maintained primary material instead of reproducing it.
 
-## Start here
+## Getting started: GPU primer
+
+Start with the [GPU Core Principles slide deck](docs/slides/gpu-core-principles.pdf) — three visual explanations of CPU versus GPU architecture, throughput through parallelism, and latency hiding through warp scheduling. The [editable HTML source](docs/slides/gpu-core-principles.html) is included.
+
+Stephen Jones's GTC series progresses from GPU fundamentals to CUDA program design and optimization:
+
+1. [How GPU Computing Works](https://www.nvidia.com/en-us/on-demand/session/gtcspring21-s31151/) — GTC 2021; GPU execution, latency, throughput, and performance limits.
+2. [How CUDA Programming Works](https://www.nvidia.com/en-us/on-demand/session/gtcfall22-a41101/) — GTC 2022; how CUDA maps programs and work onto GPU hardware.
+3. [How to Write a CUDA Program](https://www.nvidia.com/en-us/on-demand/session/gtcspring23-s51210/) — GTC 2023; a first-principles CUDA development workflow.
+4. [How To Write A CUDA Program: The Ninja Edition](https://www.nvidia.com/en-us/on-demand/session/gtc24-s62401/) — GTC 2024; parallel decomposition and techniques for extracting GPU performance.
+5. [How To Write A CUDA Program: The Parallel Programming Edition](https://www.nvidia.com/en-us/on-demand/session/gtc25-s72897/) — GTC 2025; parallel algorithms, CPU/GPU differences, and hardware-aware design.
+
+Then use the written references and examples:
+
+1. Read [what GPUs are and why they are used](https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/introduction.html).
+2. Learn the [CUDA programming model](https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/programming-model.html).
+3. Write a first program in [CUDA C++](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/intro-to-cuda-cpp.html) or [CUDA Python](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/intro-to-cuda-python.html).
+4. Continue with the [introductory examples](#introductory-examples) in this repository.
+
+
+## Learning resources
 - **[NVIDIA Training / Deep Learning Institute (DLI)](https://www.nvidia.com/en-us/training/find-training/?topics=accelerated+computing)** — hands-on, GPU-backed courses and workshops in CUDA and accelerated computing.
 - **[CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/)** — programming model, CUDA C++, CUDA Python, execution, memory, and advanced features.
 - **[NVIDIA Accelerated Computing Hub](https://github.com/NVIDIA/accelerated-computing-hub)** — open tutorials and user guides for GPU programming.

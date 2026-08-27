@@ -10,6 +10,7 @@ A compact technical hub for engineers building, profiling, and optimizing CUDA s
 
 ## Repository guides
 
+- [GPU Core Principles](slides/README.md) — a three-slide visual primer on architecture, parallel throughput, and latency hiding.
 - [CUDA Performance and Optimization Guide](cuda-performance-guide.md)
 - [Real-Time GPU Optimization](guides/RealTimeTips.md)
 - [GPU System Diagnostics](guides/system-diagnostics.md)

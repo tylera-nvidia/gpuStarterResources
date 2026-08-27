@@ -18,6 +18,7 @@ theme:
 
 nav:
   - Home: index.md
+  - GPU Core Principles: slides/README.md
   - CUDA Performance Guide: cuda-performance-guide.md
   - Guides:
       - Real-Time GPU Optimization: guides/RealTimeTips.md
