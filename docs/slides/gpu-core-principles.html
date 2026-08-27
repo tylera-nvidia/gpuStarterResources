@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPU Core Principles</title>
+  <style>
+    :root {
+      --ink: #101828;
+      --muted: #475467;
+      --line: #d7dee8;
+      --paper: #f7f9fc;
+      --panel: #ffffff;
+      --cpu: #e87924;
+      --cpu-soft: #fff1e7;
+      --gpu: #5d9400;
+      --gpu-bright: #76b900;
+      --gpu-soft: #edf7dc;
+      --memory: #2d72c7;
+      --memory-soft: #e8f1fb;
+      --stall: #7950b2;
+      --stall-soft: #f1eafa;
+      --neutral-soft: #eef2f6;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #dfe5ec;
+      color: var(--ink);
+      font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      padding: 32px 0;
+    }
+
+    .slide {
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      overflow: hidden;
+      background: var(--paper);
+      padding: 34px 48px 28px;
+      break-after: page;
+      page-break-after: always;
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, var(--gpu-bright) 0 66%, #d9e4c3 66% 100%);
+    }
+
+    .deck-label {
+      color: var(--gpu);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.7px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    h1 {
+      font-size: 42px;
+      line-height: 1.06;
+      letter-spacing: -1.2px;
+      margin: 0;
+      font-weight: 760;
+    }
+
+    .subtitle {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .slide-no {
+      position: absolute;
+      right: 48px;
+      top: 19px;
+      color: #667085;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .takeaway {
+      position: absolute;
+      left: 48px;
+      right: 48px;
+      bottom: 27px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #182230;
+      color: #fff;
+      border-radius: 12px;
+      padding: 11px 17px;
+      font-size: 17px;
+      line-height: 1.25;
+      z-index: 20;
+    }
+
+    .takeaway strong { color: #b7e26c; }
+    .takeaway .arrow {
+      color: #b7e26c;
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1.5px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .micro {
+      color: #667085;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 760;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+    }
+
+    .tag.cpu { color: #8a3d08; background: var(--cpu-soft); }
+    .tag.gpu { color: #365c00; background: var(--gpu-soft); }
+    .tag.mem { color: #174d88; background: var(--memory-soft); }
+    .tag.stall { color: #543484; background: var(--stall-soft); }
+
+    /* Slide 1 */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      height: 482px;
+      margin-top: 17px;
+    }
+
+    .arch-card {
+      position: relative;
+      padding: 16px 18px 14px;
+      overflow: hidden;
+    }
+
+    .arch-card.cpu-card { border-top: 5px solid var(--cpu); }
+    .arch-card.gpu-card { border-top: 5px solid var(--gpu-bright); }
+
+    .arch-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 31px;
+    }
+
+    .arch-card-head h2 {
+      margin: 0;
+      font-size: 23px;
+      letter-spacing: -.4px;
+    }
+
+    .analogy {
+      height: 111px;
+      display: grid;
+      grid-template-columns: 205px 1fr;
+      align-items: center;
+      border-bottom: 1px solid #e5eaf0;
+      margin-top: 4px;
+      padding-bottom: 6px;
+    }
+
+    .analogy-copy .big {
+      font-size: 18px;
+      font-weight: 760;
+      margin-bottom: 3px;
+    }
+
+    .analogy-copy .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .die-label {
+      margin-top: 9px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #667085;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+    }
+
+    .die-svg { width: 100%; height: 246px; display: block; margin-top: 4px; }
+
+    .arch-foot {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: -1px;
+      font-size: 11px;
+      color: #667085;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: -1px;
+    }
+
+    /* Slide 2 */
+    .parallel-main {
+      margin-top: 16px;
+      height: 248px;
+      display: grid;
+      grid-template-columns: .88fr 1.12fr;
+      gap: 18px;
+    }
+
+    .window-card {
+      padding: 14px 16px;
+      position: relative;
+    }
+
+    .window-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 9px;
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 760;
+    }
+
+    .window-caption { color: var(--muted); font-size: 12px; }
+
+    .round-labels {
+      margin-left: 58px;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 5px;
+      color: #7b8798;
+      font-size: 9px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .cpu-rounds {
+      display: grid;
+      grid-template-columns: 51px 1fr;
+      gap: 7px;
+    }
+
+    .lane-labels {
+      display: grid;
+      grid-template-rows: repeat(4, 1fr);
+      gap: 5px;
+      color: #667085;
+      font-size: 10px;
+      align-items: center;
+      text-align: right;
+    }
+
+    .round-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 5px;
+      height: 118px;
+    }
+
+    .work-token {
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .work-token.cpu { background: var(--cpu-soft); border: 1px solid #efad7d; color: #8a3d08; }
+    .work-token.gpu { background: var(--gpu-soft); border: 1px solid #a8ce68; color: #365c00; }
+
+    .gpu-work-area {
+      margin-top: 21px;
+      position: relative;
+    }
+
+    .gpu-work-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 5px;
+      height: 81px;
+    }
+
+    .brace {
+      border-left: 2px solid var(--gpu);
+      border-right: 2px solid var(--gpu);
+      border-bottom: 2px solid var(--gpu);
+      height: 10px;
+      margin: 6px 3px 0;
+      position: relative;
+    }
+
+    .brace span {
+      position: absolute;
+      top: 8px;
+      width: 100%;
+      text-align: center;
+      color: #477300;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      height: 198px;
+      margin-top: 16px;
+    }
+
+    .benefit-card { padding: 15px 18px; display: grid; grid-template-columns: 205px 1fr; gap: 15px; align-items: center; }
+
+    .benefit-title { font-size: 19px; font-weight: 760; margin: 0 0 6px; }
+    .benefit-copy { color: var(--muted); font-size: 13px; line-height: 1.35; margin: 0; }
+    .benefit-copy strong { color: var(--ink); }
+
+    .mem-diagram, .compute-diagram { width: 205px; height: 142px; }
+
+    /* Slide 3 */
+    .scheduler-grid {
+      display: grid;
+      grid-template-columns: 1fr 288px;
+      gap: 18px;
+      height: 482px;
+      margin-top: 17px;
+    }
+
+    .timeline-card { padding: 15px 16px; }
+
+    .timeline-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 28px;
+      margin-bottom: 10px;
+    }
+
+    .timeline-head h2 { margin: 0; font-size: 18px; }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: 83px repeat(7, 1fr);
+      grid-template-rows: 21px 48px repeat(4, 57px);
+      gap: 6px;
+    }
+
+    .time-label {
+      color: #7b8798;
+      font-size: 10px;
+      text-align: center;
+      align-self: end;
+    }
+
+    .row-label {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 7px;
+      color: #475467;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .issue-cell, .timeline-cell {
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 760;
+      position: relative;
+    }
+
+    .issue-cell {
+      background: #182230;
+      color: #fff;
+      border-bottom: 4px solid var(--gpu-bright);
+    }
+
+    .timeline-cell.empty { background: #f3f5f8; color: #98a2b3; border: 1px dashed #d0d7e2; }
+    .timeline-cell.ready { background: #f8fafc; color: #708090; border: 1px solid #d8dee7; }
+    .timeline-cell.compute { background: var(--gpu-soft); color: #365c00; border: 1px solid #a8ce68; }
+    .timeline-cell.load { background: var(--memory-soft); color: #174d88; border: 1px solid #88b3df; }
+    .timeline-cell.wait {
+      color: #543484;
+      border: 1px solid #b8a0d6;
+      background: repeating-linear-gradient(135deg, #f6f1fb 0 7px, #eadff6 7px 14px);
+    }
+
+    .timeline-note {
+      margin: 13px 0 0 88px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .timeline-note strong { color: var(--ink); }
+
+    .sched-side { display: flex; flex-direction: column; gap: 13px; }
+    .sched-card { padding: 15px 16px; }
+    .sched-card h3 { margin: 0 0 10px; font-size: 16px; }
+
+    .step {
+      display: grid;
+      grid-template-columns: 25px 1fr;
+      gap: 8px;
+      align-items: start;
+      margin: 9px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .step-no {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--gpu-soft);
+      color: #365c00;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 760;
+    }
+
+    .dependency {
+      display: grid;
+      grid-template-columns: 42px repeat(7, 1fr);
+      gap: 4px;
+      align-items: center;
+      margin: 8px 0 5px;
+    }
+
+    .dep-label { color: #667085; font-size: 9px; text-align: right; padding-right: 3px; }
+    .dep-cell { height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; }
+    .dep-cell.work { background: var(--cpu-soft); color: #8a3d08; }
+    .dep-cell.gap { background: repeating-linear-gradient(135deg, #f5f1f9 0 5px, #e9e0f2 5px 10px); color: #543484; }
+    .dep-cell.gpuwork { background: var(--gpu-soft); color: #365c00; }
+
+    .condition-list {
+      margin: 8px 0 0;
+      padding-left: 17px;
+      color: var(--muted);
+      font-size: 11.5px;
+      line-height: 1.38;
+    }
+
+    .condition-list li { margin: 4px 0; }
+
+    @page { size: 13.333333in 7.5in; margin: 0; }
+    @media print {
+      body { display: block; padding: 0; margin: 0; background: transparent; }
+      .slide { margin: 0; box-shadow: none; }
+      .slide:last-child { break-after: auto; page-break-after: auto; }
+    }
+
+    body.single { display: block; padding: 0; background: var(--paper); }
+    body.single .slide { display: none; }
+    body.single .slide.selected { display: block; }
+  </style>
+</head>
+<body>
+  <section class="slide" id="slide-1" aria-label="Slide 1: CPU versus GPU architecture">
+    <div class="deck-label">GPU core principles · Architecture</div>
+    <h1>CPU minimizes latency. GPU maximizes throughput.</h1>
+    <div class="subtitle">Both are parallel—but a few sophisticated CPU cores finish diverse tasks quickly, while many GPU lanes move far more total work.</div>
+    <div class="slide-no">01 / 03</div>
+
+    <div class="arch-grid">
+      <article class="panel arch-card cpu-card">
+        <div class="arch-card-head">
+          <h2>CPU</h2>
+          <span class="tag cpu">latency first</span>
+        </div>
+        <div class="analogy">
+          <svg viewBox="0 0 210 100" role="img" aria-label="Sports car carrying a few passengers">
+            <g transform="translate(0 -10)">
+              <path d="M24 59 L39 39 Q46 27 65 25 L128 25 Q145 27 160 45 L184 51 Q191 53 193 61 L193 74 L181 78 L35 78 L22 71 Z" fill="#e87924"/>
+              <path d="M55 36 Q60 30 71 30 L102 30 L102 47 L45 47 Z" fill="#fff1e7"/>
+              <path d="M109 30 L127 30 Q138 31 151 47 L109 47 Z" fill="#fff1e7"/>
+              <circle cx="57" cy="76" r="15" fill="#182230"/><circle cx="57" cy="76" r="6" fill="#d7dee8"/>
+              <circle cx="160" cy="76" r="15" fill="#182230"/><circle cx="160" cy="76" r="6" fill="#d7dee8"/>
+              <circle cx="78" cy="39" r="5" fill="#182230"/><circle cx="124" cy="39" r="5" fill="#182230"/>
+            </g>
+            <text x="104" y="96" text-anchor="middle" font-size="10" fill="#667085" font-weight="700">FEW PASSENGERS</text>
+          </svg>
+          <div class="analogy-copy">
+            <div class="big">Sports car</div>
+            <div class="small">A few passengers reach different destinations quickly.</div>
+          </div>
+        </div>
+        <div class="die-label"><span>simplified silicon layout</span><span>conceptual · not to scale</span></div>
+        <svg class="die-svg" viewBox="0 0 540 250" role="img" aria-label="Conceptual CPU layout with large cache and control blocks and four sophisticated cores">
+          <rect x="2" y="2" width="536" height="226" rx="11" fill="#f8fafc" stroke="#aab5c3" stroke-width="2"/>
+          <rect x="16" y="16" width="160" height="91" rx="8" fill="#fff1e7" stroke="#e8a06a"/>
+          <text x="96" y="54" text-anchor="middle" font-size="15" font-weight="700" fill="#8a3d08">CONTROL</text>
+          <text x="96" y="74" text-anchor="middle" font-size="11" fill="#8a3d08">branch prediction · OoO</text>
+          <rect x="16" y="118" width="160" height="96" rx="8" fill="#e8f1fb" stroke="#86add6"/>
+          <text x="96" y="159" text-anchor="middle" font-size="15" font-weight="700" fill="#174d88">LARGE CACHES</text>
+          <text x="96" y="179" text-anchor="middle" font-size="11" fill="#174d88">keep a few threads fed</text>
+          <g>
+            <rect x="190" y="16" width="159" height="91" rx="8" fill="#ffffff" stroke="#d0d7e2"/>
+            <rect x="363" y="16" width="159" height="91" rx="8" fill="#ffffff" stroke="#d0d7e2"/>
+            <rect x="190" y="118" width="159" height="96" rx="8" fill="#ffffff" stroke="#d0d7e2"/>
+            <rect x="363" y="118" width="159" height="96" rx="8" fill="#ffffff" stroke="#d0d7e2"/>
+            <g fill="#e87924">
+              <rect x="204" y="64" width="28" height="25" rx="3"/><rect x="237" y="64" width="28" height="25" rx="3"/><rect x="270" y="64" width="28" height="25" rx="3"/><rect x="303" y="64" width="28" height="25" rx="3"/>
+              <rect x="377" y="64" width="28" height="25" rx="3"/><rect x="410" y="64" width="28" height="25" rx="3"/><rect x="443" y="64" width="28" height="25" rx="3"/><rect x="476" y="64" width="28" height="25" rx="3"/>
+              <rect x="204" y="168" width="28" height="25" rx="3"/><rect x="237" y="168" width="28" height="25" rx="3"/><rect x="270" y="168" width="28" height="25" rx="3"/><rect x="303" y="168" width="28" height="25" rx="3"/>
+              <rect x="377" y="168" width="28" height="25" rx="3"/><rect x="410" y="168" width="28" height="25" rx="3"/><rect x="443" y="168" width="28" height="25" rx="3"/><rect x="476" y="168" width="28" height="25" rx="3"/>
+            </g>
+            <g fill="#344054" font-size="13" font-weight="700" text-anchor="middle">
+              <text x="270" y="42">CORE 0</text><text x="443" y="42">CORE 1</text><text x="270" y="145">CORE 2</text><text x="443" y="145">CORE 3</text>
+            </g>
+            <g fill="#667085" font-size="9" text-anchor="middle">
+              <text x="270" y="102">scalar + SIMD</text><text x="443" y="102">scalar + SIMD</text><text x="270" y="207">scalar + SIMD</text><text x="443" y="207">scalar + SIMD</text>
+            </g>
+          </g>
+          <text x="270" y="245" text-anchor="middle" font-size="11" fill="#667085">few large, flexible execution engines</text>
+        </svg>
+      </article>
+
+      <article class="panel arch-card gpu-card">
+        <div class="arch-card-head">
+          <h2>GPU</h2>
+          <span class="tag gpu">throughput first</span>
+        </div>
+        <div class="analogy">
+          <svg viewBox="0 0 210 100" role="img" aria-label="Bus carrying many passengers">
+            <g transform="translate(0 -10)">
+              <rect x="18" y="18" width="177" height="64" rx="11" fill="#76b900"/>
+              <rect x="28" y="27" width="28" height="27" rx="3" fill="#edf7dc"/>
+              <rect x="62" y="27" width="28" height="27" rx="3" fill="#edf7dc"/>
+              <rect x="96" y="27" width="28" height="27" rx="3" fill="#edf7dc"/>
+              <rect x="130" y="27" width="28" height="27" rx="3" fill="#edf7dc"/>
+              <rect x="164" y="27" width="21" height="43" rx="3" fill="#edf7dc"/>
+              <g fill="#182230">
+                <circle cx="38" cy="38" r="4"/><circle cx="72" cy="38" r="4"/><circle cx="106" cy="38" r="4"/><circle cx="140" cy="38" r="4"/>
+              </g>
+              <circle cx="50" cy="80" r="13" fill="#182230"/><circle cx="50" cy="80" r="5" fill="#d7dee8"/>
+              <circle cx="165" cy="80" r="13" fill="#182230"/><circle cx="165" cy="80" r="5" fill="#d7dee8"/>
+            </g>
+            <text x="104" y="98" text-anchor="middle" font-size="10" fill="#667085" font-weight="700">MANY PASSENGERS</text>
+          </svg>
+          <div class="analogy-copy">
+            <div class="big">Bus</div>
+            <div class="small">Many passengers following similar routes move together.</div>
+          </div>
+        </div>
+        <div class="die-label"><span>simplified silicon layout</span><span>conceptual · not to scale</span></div>
+        <svg class="die-svg" viewBox="0 0 540 250" role="img" aria-label="Conceptual GPU layout with repeated streaming multiprocessors and many arithmetic lanes">
+          <rect x="2" y="2" width="536" height="226" rx="11" fill="#f8fafc" stroke="#aab5c3" stroke-width="2"/>
+          <g font-family="DejaVu Sans, Arial" font-weight="700">
+            <g>
+              <rect x="16" y="16" width="117" height="87" rx="7" fill="#ffffff" stroke="#accd76"/>
+              <rect x="147" y="16" width="117" height="87" rx="7" fill="#ffffff" stroke="#accd76"/>
+              <rect x="278" y="16" width="117" height="87" rx="7" fill="#ffffff" stroke="#accd76"/>
+              <rect x="409" y="16" width="113" height="87" rx="7" fill="#ffffff" stroke="#accd76"/>
+              <rect x="16" y="115" width="117" height="62" rx="7" fill="#ffffff" stroke="#accd76"/>
+              <rect x="147" y="115" width="117" height="62" rx="7" fill="#ffffff" stroke="#accd76"/>
+              <rect x="278" y="115" width="117" height="62" rx="7" fill="#ffffff" stroke="#accd76"/>
+              <rect x="409" y="115" width="113" height="62" rx="7" fill="#ffffff" stroke="#accd76"/>
+            </g>
+            <g fill="#365c00" font-size="11" text-anchor="middle">
+              <text x="74" y="36">SM</text><text x="205" y="36">SM</text><text x="336" y="36">SM</text><text x="465" y="36">SM</text>
+              <text x="74" y="133">SM</text><text x="205" y="133">SM</text><text x="336" y="133">SM</text><text x="465" y="133">SM</text>
+            </g>
+          </g>
+          <g fill="#76b900">
+            <rect x="27" y="48" width="13" height="18" rx="2"/><rect x="45" y="48" width="13" height="18" rx="2"/><rect x="63" y="48" width="13" height="18" rx="2"/><rect x="81" y="48" width="13" height="18" rx="2"/><rect x="99" y="48" width="13" height="18" rx="2"/>
+            <rect x="27" y="72" width="13" height="18" rx="2"/><rect x="45" y="72" width="13" height="18" rx="2"/><rect x="63" y="72" width="13" height="18" rx="2"/><rect x="81" y="72" width="13" height="18" rx="2"/><rect x="99" y="72" width="13" height="18" rx="2"/>
+            <rect x="158" y="48" width="13" height="18" rx="2"/><rect x="176" y="48" width="13" height="18" rx="2"/><rect x="194" y="48" width="13" height="18" rx="2"/><rect x="212" y="48" width="13" height="18" rx="2"/><rect x="230" y="48" width="13" height="18" rx="2"/>
+            <rect x="158" y="72" width="13" height="18" rx="2"/><rect x="176" y="72" width="13" height="18" rx="2"/><rect x="194" y="72" width="13" height="18" rx="2"/><rect x="212" y="72" width="13" height="18" rx="2"/><rect x="230" y="72" width="13" height="18" rx="2"/>
+            <rect x="289" y="48" width="13" height="18" rx="2"/><rect x="307" y="48" width="13" height="18" rx="2"/><rect x="325" y="48" width="13" height="18" rx="2"/><rect x="343" y="48" width="13" height="18" rx="2"/><rect x="361" y="48" width="13" height="18" rx="2"/>
+            <rect x="289" y="72" width="13" height="18" rx="2"/><rect x="307" y="72" width="13" height="18" rx="2"/><rect x="325" y="72" width="13" height="18" rx="2"/><rect x="343" y="72" width="13" height="18" rx="2"/><rect x="361" y="72" width="13" height="18" rx="2"/>
+            <rect x="420" y="48" width="13" height="18" rx="2"/><rect x="438" y="48" width="13" height="18" rx="2"/><rect x="456" y="48" width="13" height="18" rx="2"/><rect x="474" y="48" width="13" height="18" rx="2"/><rect x="492" y="48" width="13" height="18" rx="2"/>
+            <rect x="420" y="72" width="13" height="18" rx="2"/><rect x="438" y="72" width="13" height="18" rx="2"/><rect x="456" y="72" width="13" height="18" rx="2"/><rect x="474" y="72" width="13" height="18" rx="2"/><rect x="492" y="72" width="13" height="18" rx="2"/>
+            <g opacity=".9">
+              <rect x="27" y="143" width="13" height="20" rx="2"/><rect x="45" y="143" width="13" height="20" rx="2"/><rect x="63" y="143" width="13" height="20" rx="2"/><rect x="81" y="143" width="13" height="20" rx="2"/><rect x="99" y="143" width="13" height="20" rx="2"/>
+              <rect x="158" y="143" width="13" height="20" rx="2"/><rect x="176" y="143" width="13" height="20" rx="2"/><rect x="194" y="143" width="13" height="20" rx="2"/><rect x="212" y="143" width="13" height="20" rx="2"/><rect x="230" y="143" width="13" height="20" rx="2"/>
+              <rect x="289" y="143" width="13" height="20" rx="2"/><rect x="307" y="143" width="13" height="20" rx="2"/><rect x="325" y="143" width="13" height="20" rx="2"/><rect x="343" y="143" width="13" height="20" rx="2"/><rect x="361" y="143" width="13" height="20" rx="2"/>
+              <rect x="420" y="143" width="13" height="20" rx="2"/><rect x="438" y="143" width="13" height="20" rx="2"/><rect x="456" y="143" width="13" height="20" rx="2"/><rect x="474" y="143" width="13" height="20" rx="2"/><rect x="492" y="143" width="13" height="20" rx="2"/>
+            </g>
+          </g>
+          <rect x="16" y="188" width="506" height="26" rx="6" fill="#e8f1fb" stroke="#86add6"/>
+          <text x="269" y="206" text-anchor="middle" font-size="12" font-weight="700" fill="#174d88">SHARED L2 + MEMORY CONTROLLERS → HIGH-BANDWIDTH MEMORY</text>
+          <text x="270" y="245" text-anchor="middle" font-size="11" fill="#667085">many repeated execution lanes across many SMs</text>
+        </svg>
+      </article>
+    </div>
+
+    <div class="takeaway"><span class="arrow">→</span><span><strong>Same budget, different priority:</strong> CPUs spend more on fast, flexible execution; GPUs devote more silicon to repeated arithmetic throughput.</span></div>
+  </section>
+
+  <section class="slide" id="slide-2" aria-label="Slide 2: Parallel GPU execution">
+    <div class="deck-label">GPU core principles · Parallelism</div>
+    <h1>Many threads in flight keep memory and math busy.</h1>
+    <div class="subtitle">The GPU exposes a much larger concurrency window—independent work can fill wide execution and memory pipelines.</div>
+    <div class="slide-no">02 / 03</div>
+
+    <div class="parallel-main">
+      <article class="panel window-card">
+        <div class="window-head">
+          <div class="window-title"><span class="tag cpu">CPU</span> Smaller window</div>
+          <div class="window-caption">same 32 operations · conceptual rounds →</div>
+        </div>
+        <div class="round-labels"><span>R1</span><span>R2</span><span>R3</span><span>R4</span><span>R5</span><span>R6</span><span>R7</span><span>R8</span></div>
+        <div class="cpu-rounds">
+          <div class="lane-labels"><span>lane 0</span><span>lane 1</span><span>lane 2</span><span>lane 3</span></div>
+          <div class="round-grid" aria-label="Four conceptual CPU lanes completing 32 operations in eight rounds">
+            <span class="work-token cpu">01</span><span class="work-token cpu">05</span><span class="work-token cpu">09</span><span class="work-token cpu">13</span><span class="work-token cpu">17</span><span class="work-token cpu">21</span><span class="work-token cpu">25</span><span class="work-token cpu">29</span>
+            <span class="work-token cpu">02</span><span class="work-token cpu">06</span><span class="work-token cpu">10</span><span class="work-token cpu">14</span><span class="work-token cpu">18</span><span class="work-token cpu">22</span><span class="work-token cpu">26</span><span class="work-token cpu">30</span>
+            <span class="work-token cpu">03</span><span class="work-token cpu">07</span><span class="work-token cpu">11</span><span class="work-token cpu">15</span><span class="work-token cpu">19</span><span class="work-token cpu">23</span><span class="work-token cpu">27</span><span class="work-token cpu">31</span>
+            <span class="work-token cpu">04</span><span class="work-token cpu">08</span><span class="work-token cpu">12</span><span class="work-token cpu">16</span><span class="work-token cpu">20</span><span class="work-token cpu">24</span><span class="work-token cpu">28</span><span class="work-token cpu">32</span>
+          </div>
+        </div>
+        <div class="micro" style="margin-top:9px; text-align:center;">Modern CPUs also use multicore + SIMD, but across a smaller concurrency window.</div>
+      </article>
+
+      <article class="panel window-card">
+        <div class="window-head">
+          <div class="window-title"><span class="tag gpu">GPU</span> Massive window</div>
+          <div class="window-caption">many resident threads ready to run</div>
+        </div>
+        <div class="gpu-work-area">
+          <div class="gpu-work-grid" aria-label="Thirty-two CUDA threads represented as a warp-sized group">
+            <span class="work-token gpu">01</span><span class="work-token gpu">02</span><span class="work-token gpu">03</span><span class="work-token gpu">04</span><span class="work-token gpu">05</span><span class="work-token gpu">06</span><span class="work-token gpu">07</span><span class="work-token gpu">08</span><span class="work-token gpu">09</span><span class="work-token gpu">10</span><span class="work-token gpu">11</span><span class="work-token gpu">12</span><span class="work-token gpu">13</span><span class="work-token gpu">14</span><span class="work-token gpu">15</span><span class="work-token gpu">16</span>
+            <span class="work-token gpu">17</span><span class="work-token gpu">18</span><span class="work-token gpu">19</span><span class="work-token gpu">20</span><span class="work-token gpu">21</span><span class="work-token gpu">22</span><span class="work-token gpu">23</span><span class="work-token gpu">24</span><span class="work-token gpu">25</span><span class="work-token gpu">26</span><span class="work-token gpu">27</span><span class="work-token gpu">28</span><span class="work-token gpu">29</span><span class="work-token gpu">30</span><span class="work-token gpu">31</span><span class="work-token gpu">32</span>
+          </div>
+          <div class="brace"><span>one CUDA warp = 32 threads · many warps can be resident</span></div>
+        </div>
+        <div class="micro" style="margin-top:31px; text-align:center;">Hardware schedules resident warps onto finite lanes—launched threads are not all physically active at once.</div>
+      </article>
+    </div>
+
+    <div class="benefit-grid">
+      <article class="panel benefit-card">
+        <svg class="mem-diagram" viewBox="0 0 205 142" role="img" aria-label="Adjacent thread loads coalescing into a wide memory transaction">
+          <text x="102" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#475467">ADJACENT THREAD ACCESSES</text>
+          <g fill="#edf7dc" stroke="#8fba4c">
+            <rect x="7" y="23" width="20" height="24" rx="4"/><rect x="31" y="23" width="20" height="24" rx="4"/><rect x="55" y="23" width="20" height="24" rx="4"/><rect x="79" y="23" width="20" height="24" rx="4"/><rect x="103" y="23" width="20" height="24" rx="4"/><rect x="127" y="23" width="20" height="24" rx="4"/><rect x="151" y="23" width="20" height="24" rx="4"/><rect x="175" y="23" width="20" height="24" rx="4"/>
+          </g>
+          <g font-size="8" text-anchor="middle" fill="#365c00" font-weight="700">
+            <text x="17" y="39">0</text><text x="41" y="39">1</text><text x="65" y="39">2</text><text x="89" y="39">3</text><text x="113" y="39">4</text><text x="137" y="39">5</text><text x="161" y="39">6</text><text x="185" y="39">7</text>
+          </g>
+          <path d="M17 50 L65 72 M185 50 L139 72" fill="none" stroke="#2d72c7" stroke-width="2"/>
+          <path d="M102 50 L102 68" fill="none" stroke="#2d72c7" stroke-width="2"/>
+          <path d="M98 63 L102 69 L106 63" fill="none" stroke="#2d72c7" stroke-width="2"/>
+          <rect x="18" y="73" width="169" height="28" rx="6" fill="#2d72c7"/>
+          <text x="102" y="91" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">COALESCED TRANSACTION</text>
+          <path d="M102 104 L102 118" stroke="#2d72c7" stroke-width="2"/>
+          <path d="M98 113 L102 119 L106 113" fill="none" stroke="#2d72c7" stroke-width="2"/>
+          <rect x="52" y="120" width="100" height="18" rx="4" fill="#e8f1fb" stroke="#86add6"/>
+          <text x="102" y="133" text-anchor="middle" font-size="9" fill="#174d88" font-weight="700">WIDE MEMORY PATH</text>
+        </svg>
+        <div>
+          <span class="tag mem">memory throughput</span>
+          <h2 class="benefit-title">Keep bandwidth busy</h2>
+          <p class="benefit-copy"><strong>Coalesced accesses</strong> make wide transactions efficient; many outstanding requests help sustain bandwidth.</p>
+        </div>
+      </article>
+
+      <article class="panel benefit-card">
+        <svg class="compute-diagram" viewBox="0 0 205 142" role="img" aria-label="One warp instruction feeding multiple arithmetic lanes">
+          <rect x="39" y="6" width="127" height="26" rx="6" fill="#182230"/>
+          <text x="102" y="23" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">WARP INSTRUCTION: FMA</text>
+          <path d="M102 34 L102 50 M102 44 L17 57 M102 44 L41 57 M102 44 L65 57 M102 44 L89 57 M102 44 L113 57 M102 44 L137 57 M102 44 L161 57 M102 44 L185 57" stroke="#76b900" stroke-width="1.5" fill="none"/>
+          <g fill="#76b900">
+            <rect x="7" y="58" width="20" height="45" rx="4"/><rect x="31" y="58" width="20" height="45" rx="4"/><rect x="55" y="58" width="20" height="45" rx="4"/><rect x="79" y="58" width="20" height="45" rx="4"/><rect x="103" y="58" width="20" height="45" rx="4"/><rect x="127" y="58" width="20" height="45" rx="4"/><rect x="151" y="58" width="20" height="45" rx="4"/><rect x="175" y="58" width="20" height="45" rx="4"/>
+          </g>
+          <g font-size="9" text-anchor="middle" fill="#fff" font-weight="700">
+            <text x="17" y="84">ALU</text><text x="41" y="84">ALU</text><text x="65" y="84">ALU</text><text x="89" y="84">ALU</text><text x="113" y="84">ALU</text><text x="137" y="84">ALU</text><text x="161" y="84">ALU</text><text x="185" y="84">ALU</text>
+          </g>
+          <rect x="27" y="115" width="151" height="22" rx="5" fill="#edf7dc" stroke="#a8ce68"/>
+          <text x="102" y="130" text-anchor="middle" font-size="9" fill="#365c00" font-weight="700">MANY RESULTS PER ISSUE</text>
+        </svg>
+        <div>
+          <span class="tag gpu">compute throughput</span>
+          <h2 class="benefit-title">Keep math lanes busy</h2>
+          <p class="benefit-copy"><strong>SIMT execution</strong> applies an instruction across many lanes, raising aggregate FLOP/s when work stays converged.</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="takeaway"><span class="arrow">→</span><span><strong>Parallelism creates throughput</strong> when access patterns are coalesced, enough independent work is available, and execution lanes stay useful.</span></div>
+  </section>
+
+  <section class="slide" id="slide-3" aria-label="Slide 3: GPU warp scheduling and latency hiding">
+    <div class="deck-label">GPU core principles · Scheduling</div>
+    <h1>When one warp waits, the GPU issues another.</h1>
+    <div class="subtitle">Resident warp state stays on-chip, so the scheduler can select ready work with very little handoff overhead.</div>
+    <div class="slide-no">03 / 03</div>
+
+    <div class="scheduler-grid">
+      <article class="panel timeline-card">
+        <div class="timeline-head">
+          <h2>One SM · seven issue opportunities</h2>
+          <span class="tag gpu">ideal latency-hiding example</span>
+        </div>
+        <div class="timeline" aria-label="Timeline showing Warp A waiting while Warps B, C, and D issue useful work">
+          <div></div><div class="time-label">t0</div><div class="time-label">t1</div><div class="time-label">t2</div><div class="time-label">t3</div><div class="time-label">t4</div><div class="time-label">t5</div><div class="time-label">t6</div>
+          <div class="row-label">issued →</div><div class="issue-cell">A</div><div class="issue-cell">B</div><div class="issue-cell">B</div><div class="issue-cell">C</div><div class="issue-cell">C</div><div class="issue-cell">D</div><div class="issue-cell">A</div>
+          <div class="row-label">Warp A</div><div class="timeline-cell load">LOAD</div><div class="timeline-cell wait">WAIT</div><div class="timeline-cell wait">WAIT</div><div class="timeline-cell wait">WAIT</div><div class="timeline-cell wait">WAIT</div><div class="timeline-cell wait">WAIT</div><div class="timeline-cell compute">USE DATA</div>
+          <div class="row-label">Warp B</div><div class="timeline-cell ready">ready</div><div class="timeline-cell compute">MATH</div><div class="timeline-cell compute">MATH</div><div class="timeline-cell empty">—</div><div class="timeline-cell empty">—</div><div class="timeline-cell empty">—</div><div class="timeline-cell empty">—</div>
+          <div class="row-label">Warp C</div><div class="timeline-cell ready">ready</div><div class="timeline-cell ready">ready</div><div class="timeline-cell ready">ready</div><div class="timeline-cell compute">MATH</div><div class="timeline-cell compute">MATH</div><div class="timeline-cell empty">—</div><div class="timeline-cell empty">—</div>
+          <div class="row-label">Warp D</div><div class="timeline-cell ready">ready</div><div class="timeline-cell ready">ready</div><div class="timeline-cell ready">ready</div><div class="timeline-cell ready">ready</div><div class="timeline-cell ready">ready</div><div class="timeline-cell compute">MATH</div><div class="timeline-cell empty">—</div>
+        </div>
+        <div class="timeline-note">
+          <div><strong>Warp A still waits.</strong><br>The memory latency is not shortened.</div>
+          <div><strong>The issue path stays useful.</strong><br>B, C, and D cover the gap with independent work.</div>
+        </div>
+      </article>
+
+      <aside class="sched-side">
+        <div class="panel sched-card">
+          <h3>What the scheduler does</h3>
+          <div class="step"><span class="step-no">1</span><span>A load or dependency stalls Warp A.</span></div>
+          <div class="step"><span class="step-no">2</span><span>A’s execution state remains <strong>resident on-chip</strong>.</span></div>
+          <div class="step"><span class="step-no">3</span><span>The scheduler selects a <strong>ready</strong> Warp B, C, or D.</span></div>
+          <div class="step"><span class="step-no">4</span><span>Warp A resumes when its data is ready.</span></div>
+        </div>
+
+        <div class="panel sched-card">
+          <h3>Why multiple warps matter</h3>
+          <div class="dependency">
+            <span class="dep-label">one chain</span><span class="dep-cell work">work</span><span class="dep-cell gap" style="grid-column: span 5;">waiting on data</span><span class="dep-cell work">work</span>
+            <span class="dep-label">many warps</span><span class="dep-cell gpuwork">A</span><span class="dep-cell gpuwork">B</span><span class="dep-cell gpuwork">B</span><span class="dep-cell gpuwork">C</span><span class="dep-cell gpuwork">C</span><span class="dep-cell gpuwork">D</span><span class="dep-cell gpuwork">A</span>
+          </div>
+          <ul class="condition-list">
+            <li>Needs enough independent, resident warps.</li>
+            <li>Registers and shared memory limit residency.</li>
+            <li>If every warp waits, the SM can still idle.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="takeaway"><span class="arrow">→</span><span><strong>Hide latency; do not eliminate it.</strong> The GPU keeps meaningful work flowing by choosing another ready resident warp.</span></div>
+  </section>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const selected = params.get("slide");
+    if (selected) {
+      const target = document.getElementById(`slide-${selected}`);
+      if (target) {
+        document.body.classList.add("single");
+        target.classList.add("selected");
+      }
+    }
+  </script>
+</body>
+</html>
