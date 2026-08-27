@@ -15,7 +15,6 @@ comparison of HW diagrams from whitepapers
 - Tensor Cores
 - Special Function Unit
 - Raytracing Cores
-   - [Optix Documentation](https://raytracing-docs.nvidia.com/optix8/index.html)
 #### Memory HW Resources
 
 - HW Memory Types and Hierarchy
@@ -250,7 +249,7 @@ Below are a set of common, useful command options. They can be combined and enab
 - [Example 2](https://github.com/tylera-nvidia/gpuStarterResources/tree/main/examples/example_2)
 
 ### Example 3: Optimizing Plan Creation for cuFFT
-- [FFT Sizing Benchmark](https://github.com/tylera-nvidia/fftSizing)
+- FFT Sizing Benchmark: https://github.com/tylera-nvidia/fftSizing
 
 ### Example 4: using cuBlasLT Auto Tuning
 - [cuBLASLt Optimization](https://developer.nvidia.com/blog/introducing-grouped-gemm-apis-in-cublas-and-more-performance-updates/)

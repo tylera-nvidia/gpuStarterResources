@@ -74,12 +74,8 @@ Public NVIDIA architecture papers for CUDA-capable GPUs, newest first:
 - **Ampere:** [A100 / GA100](https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/nvidia-ampere-architecture-whitepaper.pdf) · [GA102](https://www.nvidia.com/content/PDF/nvidia-ampere-ga-102-gpu-architecture-whitepaper-v2.1.pdf)
 - **Turing:** [TU102](https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf)
 - **Volta:** [V100 / GV100](https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf)
-- **Pascal:** [P100 / GP100](https://images.nvidia.com/content/pdf/tesla/whitepaper/pascal-architecture-whitepaper-v1.2.pdf) · [GTX 1080 / GP104](https://international.download.nvidia.com/geforce-com/international/pdfs/GeForce_GTX_1080_Whitepaper_FINAL.pdf)
-- **Maxwell:** [GTX 750 Ti / GM107](https://www.nvidia.com/en-us/geforce/graphics-cards/geforce-gtx-750-ti/) · [GTX 980 / GM204](https://international.download.nvidia.com/geforce-com/international/pdfs/GeForce_GTX_980_Whitepaper_FINAL.PDF)
-- **Kepler:** [GTX 680 / GK104](https://www.nvidia.com/content/PDF/product-specifications/GeForce_GTX_680_Whitepaper_FINAL.pdf) · [GK110/GK210](https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-product-literature/NVIDIA-Kepler-GK110-GK210-Architecture-Whitepaper.pdf)
-- **Fermi:** [GF100](https://www.nvidia.com/content/PDF/fermi_white_papers/NVIDIAFermiComputeArchitectureWhitepaper.pdf)
-- **Tesla:** [GeForce 8800 / G80 technical brief](https://www.nvidia.com/content/PDF/Geforce_8800/GeForce_8800_GPU_Architecture_Technical_Brief.pdf)
-
+- **Pascal:** [P100 / GP100](https://images.nvidia.com/content/pdf/tesla/whitepaper/pascal-architecture-whitepaper-v1.2.pdf) · [GTX 1080 / GP104]
+  
 **Rubin:** NVIDIA has published an [official GPU architecture deep dive](https://developer.nvidia.com/blog/inside-nvidia-rubin-gpu-architecture-powering-the-era-of-agentic-ai/), but not an architecture whitepaper.
 
 
